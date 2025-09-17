@@ -4,30 +4,42 @@ import { useState } from "react";
 import { z } from "zod";
 
 // Zod validation schema
-const createBuyerSchema = z.object({
-  fullName: z.string().min(2, "Full Name must be at least 2 characters"),
-  phone: z.string().regex(/^\d{10,15}$/, "Phone must be 10–15 digits"),
-  email: z.string().email("Invalid email").optional().or(z.literal("")),
-  city: z.string(),
-  propertyType: z.string(),
-  bhk: z.string().optional(),
-  purpose: z.string(),
-  budgetMin: z.number().optional(),
-  budgetMax: z.number().optional(),
-  timeline: z.string(),
-  source: z.string(),
-  notes: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-}).refine((data) => {
-  if (data.budgetMin != null && data.budgetMax != null) return data.budgetMax >= data.budgetMin;
-  return true;
-}, { message: "Budget Max must be ≥ Budget Min", path: ["budgetMax"] })
-.refine((data) => {
-  if (["Apartment", "Villa"].includes(data.propertyType)) return !!data.bhk;
-  return true;
-}, { message: "BHK is required for Apartment/Villa", path: ["bhk"] });
+const createBuyerSchema = z
+  .object({
+    fullName: z.string().min(2, "Full Name must be at least 2 characters"),
+    phone: z.string().regex(/^\d{10,15}$/, "Phone must be 10–15 digits"),
+    email: z.string().email("Invalid email").optional().or(z.literal("")),
+    city: z.string(),
+    propertyType: z.string(),
+    bhk: z.string().optional(),
+    purpose: z.string(),
+    budgetMin: z.number().optional(),
+    budgetMax: z.number().optional(),
+    timeline: z.string(),
+    source: z.string(),
+    notes: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+  })
+  .refine(
+    (data) =>
+      data.budgetMin != null && data.budgetMax != null
+        ? data.budgetMax >= data.budgetMin
+        : true,
+    { message: "Budget Max must be ≥ Budget Min", path: ["budgetMax"] }
+  )
+  .refine(
+    (data) =>
+      ["Apartment", "Villa"].includes(data.propertyType)
+        ? !!data.bhk
+        : true,
+    { message: "BHK is required for Apartment/Villa", path: ["bhk"] }
+  );
 
-export default function AddBuyerForm() {
+type AddBuyerFormProps = {
+  onSuccess?: () => void;
+};
+
+export default function AddBuyerForm({ onSuccess }: AddBuyerFormProps) {
   const [formData, setFormData] = useState({
     fullName: "",
     phone: "",
@@ -73,7 +85,7 @@ export default function AddBuyerForm() {
     });
 
     if (res.ok) {
-      window.location.href = "/buyers"; // redirect after success
+      if (onSuccess) onSuccess();
     } else {
       const err = await res.json().catch(() => ({}));
       alert("Error: " + JSON.stringify(err));
@@ -82,7 +94,11 @@ export default function AddBuyerForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-xl mx-auto p-4 border rounded space-y-3">
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-xl mx-auto p-4 space-y-3 overflow-y-auto"
+      style={{ maxHeight: "80vh" }} // ensures scrolling inside modal
+    >
       <h2 className="text-xl font-bold mb-2">Add Lead</h2>
 
       <div>
@@ -90,9 +106,13 @@ export default function AddBuyerForm() {
         <input
           className="border p-2 w-full rounded"
           value={formData.fullName}
-          onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, fullName: e.target.value })
+          }
         />
-        {errors.fullName && <p className="text-red-500">{errors.fullName.join(", ")}</p>}
+        {errors.fullName && (
+          <p className="text-red-500">{errors.fullName.join(", ")}</p>
+        )}
       </div>
 
       <div>
@@ -100,9 +120,13 @@ export default function AddBuyerForm() {
         <input
           className="border p-2 w-full rounded"
           value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, phone: e.target.value })
+          }
         />
-        {errors.phone && <p className="text-red-500">{errors.phone.join(", ")}</p>}
+        {errors.phone && (
+          <p className="text-red-500">{errors.phone.join(", ")}</p>
+        )}
       </div>
 
       <div>
@@ -110,9 +134,13 @@ export default function AddBuyerForm() {
         <input
           className="border p-2 w-full rounded"
           value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, email: e.target.value })
+          }
         />
-        {errors.email && <p className="text-red-500">{errors.email.join(", ")}</p>}
+        {errors.email && (
+          <p className="text-red-500">{errors.email.join(", ")}</p>
+        )}
       </div>
 
       <div>
@@ -129,7 +157,9 @@ export default function AddBuyerForm() {
           <option>Panchkula</option>
           <option>Other</option>
         </select>
-        {errors.city && <p className="text-red-500">{errors.city.join(", ")}</p>}
+        {errors.city && (
+          <p className="text-red-500">{errors.city.join(", ")}</p>
+        )}
       </div>
 
       <div>
@@ -137,7 +167,9 @@ export default function AddBuyerForm() {
         <select
           className="border p-2 w-full rounded"
           value={formData.propertyType}
-          onChange={(e) => setFormData({ ...formData, propertyType: e.target.value, bhk: "" })}
+          onChange={(e) =>
+            setFormData({ ...formData, propertyType: e.target.value, bhk: "" })
+          }
         >
           <option value="">Select</option>
           <option>Apartment</option>
@@ -146,7 +178,9 @@ export default function AddBuyerForm() {
           <option>Office</option>
           <option>Retail</option>
         </select>
-        {errors.propertyType && <p className="text-red-500">{errors.propertyType.join(", ")}</p>}
+        {errors.propertyType && (
+          <p className="text-red-500">{errors.propertyType.join(", ")}</p>
+        )}
       </div>
 
       {["Apartment", "Villa"].includes(formData.propertyType) && (
@@ -164,7 +198,9 @@ export default function AddBuyerForm() {
             <option>4</option>
             <option>Studio</option>
           </select>
-          {errors.bhk && <p className="text-red-500">{errors.bhk.join(", ")}</p>}
+          {errors.bhk && (
+            <p className="text-red-500">{errors.bhk.join(", ")}</p>
+          )}
         </div>
       )}
 
@@ -173,7 +209,9 @@ export default function AddBuyerForm() {
         <select
           className="border p-2 w-full rounded"
           value={formData.purpose}
-          onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, purpose: e.target.value })
+          }
         >
           <option value="">Select</option>
           <option>Buy</option>
@@ -188,7 +226,9 @@ export default function AddBuyerForm() {
             type="number"
             className="border p-2 w-full rounded"
             value={formData.budgetMin}
-            onChange={(e) => setFormData({ ...formData, budgetMin: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, budgetMin: e.target.value })
+            }
           />
         </div>
         <div>
@@ -197,7 +237,9 @@ export default function AddBuyerForm() {
             type="number"
             className="border p-2 w-full rounded"
             value={formData.budgetMax}
-            onChange={(e) => setFormData({ ...formData, budgetMax: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, budgetMax: e.target.value })
+            }
           />
         </div>
       </div>
@@ -207,7 +249,9 @@ export default function AddBuyerForm() {
         <select
           className="border p-2 w-full rounded"
           value={formData.timeline}
-          onChange={(e) => setFormData({ ...formData, timeline: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, timeline: e.target.value })
+          }
         >
           <option value="">Select</option>
           <option>0-3m</option>
@@ -222,7 +266,9 @@ export default function AddBuyerForm() {
         <select
           className="border p-2 w-full rounded"
           value={formData.source}
-          onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, source: e.target.value })
+          }
         >
           <option value="">Select</option>
           <option>Website</option>
@@ -238,7 +284,9 @@ export default function AddBuyerForm() {
         <textarea
           className="border p-2 w-full rounded"
           value={formData.notes}
-          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+          onChange={(e) =>
+            setFormData({ ...formData, notes: e.target.value })
+          }
         />
       </div>
 
@@ -248,7 +296,10 @@ export default function AddBuyerForm() {
           className="border p-2 w-full rounded"
           value={formData.tags.join(", ")}
           onChange={(e) =>
-            setFormData({ ...formData, tags: e.target.value.split(",").map((t) => t.trim()) })
+            setFormData({
+              ...formData,
+              tags: e.target.value.split(",").map((t) => t.trim()),
+            })
           }
         />
       </div>
