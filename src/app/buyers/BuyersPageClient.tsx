@@ -82,6 +82,9 @@ export default function BuyersPageClient({
   return (
     <div className="space-y-4">
       {/* 🔎 Search + Filters */}
+
+    <h1 className="text-xl font-bold">Buyers List</h1>
+
       <div className="flex flex-wrap gap-2 items-center">
         <input
           type="text"
@@ -133,9 +136,7 @@ export default function BuyersPageClient({
         </select>
       </div>
 
-      // inside BuyersPageClient, above the table
 <div className="flex justify-between items-center mb-2">
-  <h1 className="text-xl font-bold">Buyers</h1>
   <button
     className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
     onClick={() => (window.location.href = "/buyers/new")}
