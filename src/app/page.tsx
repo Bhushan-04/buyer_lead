@@ -1,47 +1,38 @@
 "use client";
-
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 
-export default function HomePage() {
+export default function LoginPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async () => {
-    setLoading(true);
-    setError(null);
+  async function handleLogin(userId: string) {
+    const res = await fetch("/api/auth/demo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
 
-    try {
-      const res = await fetch("/api/auth/demo", { method: "POST" });
-      if (!res.ok) throw new Error("Demo login failed");
-
-      const data = await res.json();
-      // Save user in localStorage (or context later)
-      localStorage.setItem("demoUser", JSON.stringify(data.user));
-
-      router.push("/buyers"); // redirect to buyers page
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
+    if (res.ok) {
+      router.push("/buyers");
+    } else {
+      const { error } = await res.json();
+      alert("Login failed: " + error);
     }
-  };
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-      <h1 className="text-3xl font-bold">Welcome to Buyer Lead App</h1>
-      <p>Click below to login as Demo User and start adding leads</p>
-
-      {error && <p className="text-red-500">{error}</p>}
-
+    <div className="flex flex-col gap-4 items-center justify-center min-h-screen">
+      <h1 className="text-xl font-bold">Demo Login</h1>
       <button
-        onClick={handleLogin}
-        disabled={loading}
-        className="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+        onClick={() => handleLogin("alice")}
+        className="px-4 py-2 rounded bg-blue-500 text-white"
       >
-        {loading ? "Logging in..." : "Login as Demo User"}
+        Login as Alice
+      </button>
+      <button
+        onClick={() => handleLogin("bob")}
+        className="px-4 py-2 rounded bg-green-500 text-white"
+      >
+        Login as Bob
       </button>
     </div>
   );

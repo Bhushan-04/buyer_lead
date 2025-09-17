@@ -1,71 +1,45 @@
-// src/app/api/buyers/export/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { Parser } from "json2csv";
 import { prisma } from "@/lib/prisma";
-import * as XLSX from "xlsx";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const url = new URL(req.url);
-    const search = url.searchParams.get("search") || "";
-    const city = url.searchParams.get("city") || "";
-    const propertyType = url.searchParams.get("propertyType") || "";
-    const status = url.searchParams.get("status") || "";
-    const timeline = url.searchParams.get("timeline") || "";
-
-    const where: any = {};
-
-    if (search) {
-      where.OR = [
-        { fullName: { contains: search, mode: "insensitive" } },
-        { phone: { contains: search } },
-        { email: { contains: search, mode: "insensitive" } },
-      ];
-    }
-
-    if (city) where.city = city;
-    if (propertyType) where.propertyType = propertyType;
-    if (status) where.status = status;
-    if (timeline) where.timeline = timeline;
+    const { search, city, propertyType, status } = Object.fromEntries(req.nextUrl.searchParams.entries());
 
     const buyers = await prisma.buyer.findMany({
-      where,
-      orderBy: { updatedAt: "desc" },
+      where: {
+        AND: [
+          search
+            ? {
+                OR: [
+                  { fullName: { contains: search, mode: "insensitive" } },
+                  { email: { contains: search, mode: "insensitive" } },
+                  { phone: { contains: search, mode: "insensitive" } },
+                ],
+              }
+            : {},
+          city ? { city: city as any } : {},
+          propertyType ? { propertyType: propertyType as any } : {},
+          status ? { status: status as any } : {},
+        ],
+      },
     });
 
-    // Transform for Excel
-    const data = buyers.map((b) => ({
-      fullName: b.fullName,
-      phone: b.phone,
-      email: b.email || "",
-      city: b.city,
-      propertyType: b.propertyType,
-      bhk: b.bhk,
-      purpose: b.purpose,
-      budgetMin: b.budgetMin,
-      budgetMax: b.budgetMax,
-      timeline: b.timeline,
-      source: b.source,
-      notes: b.notes,
-      tags: b.tags.join(", "),
-      status: b.status,
-      updatedAt: b.updatedAt.toISOString(),
-    }));
+    const fields = [
+      "fullName","email","phone","city","propertyType","bhk","purpose",
+      "budgetMin","budgetMax","timeline","source","notes","tags","status"
+    ];
+    const parser = new Parser({ fields });
+    const csv = parser.parse(buyers);
 
-    const ws = XLSX.utils.json_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Buyers");
-
-    const excelBuffer = XLSX.write(wb, { type: "array", bookType: "xlsx" });
-
-    return new NextResponse(Buffer.from(excelBuffer), {
+    return new Response(csv, {
+      status: 200,
       headers: {
-        "Content-Type":
-          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename="buyers.xlsx"`,
+        "Content-Type": "text/csv",
+        "Content-Disposition": "attachment; filename=buyers.csv",
       },
     });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Failed to export buyers" }, { status: 500 });
+    return new Response("Failed to export CSV", { status: 500 });
   }
 }

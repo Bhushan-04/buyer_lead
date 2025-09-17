@@ -1,7 +1,6 @@
-// /app/api/buyers/new/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser } from "@/lib/auth";
+import { cookies } from "next/headers";
 
 // Enum mappings from frontend strings → Prisma enums
 const bhkMap: Record<string, "One" | "Two" | "Three" | "Four" | "Studio"> = {
@@ -58,10 +57,20 @@ const propertyTypeMap: Record<string, "Apartment" | "Villa" | "Plot" | "Office" 
   "Retail": "Retail",
 };
 
+// Helper to get current user from cookies
+async function getCurrentUser() {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("userId")?.value;
+  if (!userId) return null;
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  return user;
+}
+
 export async function POST(req: NextRequest) {
   try {
-    // const user = await getCurrentUser();
-    // if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const {
@@ -88,22 +97,7 @@ export async function POST(req: NextRequest) {
     const mappedCity = city ? cityMap[city] : undefined;
     const mappedPropertyType = propertyType ? propertyTypeMap[propertyType] : undefined;
 
-    let user = await prisma.user.findUnique({
-  where: { id: "demo-user-id" },
-});
-
-if (!user) {
-  // Only create if it doesn't exist
-  user = await prisma.user.create({
-    data: {
-      id: "demo-user-id",
-      email: "dem1o@example.com",
-      name: "Demo User",
-    },
-  });
-}
-
-    // Create the buyer
+    // Create buyer
     const buyer = await prisma.buyer.create({
       data: {
         fullName,
@@ -129,10 +123,7 @@ if (!user) {
       data: {
         buyerId: buyer.id,
         changedBy: user.id,
-        diff: {
-          action: "create",
-          data: body,
-        },
+        diff: { action: "create", data: body },
       },
     });
 

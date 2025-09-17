@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Buyers Lead Intake
 
-## Getting Started
+A secure **Next.js 14 + Prisma + Supabase** application for managing real estate leads (buyers).  
+Supports **CRUD operations**, user authentication (demo), and buyer history tracking.
 
-First, run the development server:
+---
 
+## Features
+
+- **Authentication**: Simple demo login with cookie-based sessions.
+- **User Ownership**: Each buyer is owned by the user who created it.
+- **Leads Management**:
+  - Create, read, update, and delete buyers.
+  - Only the owner can edit or delete a buyer.
+- **Buyer History**: Logs what changed, who changed it, and when.
+- **Search & Filter**: Search buyers by multiple fields with debounced queries for optimized UX.
+- **UI/UX**: Responsive design built with TailwindCSS.
+
+---
+
+## Tech Stack
+
+- **Frontend**: Next.js 14 (App Router), React, TailwindCSS
+- **Backend**: Next.js API routes
+- **Database**: PostgreSQL (Supabase)
+- **ORM**: Prisma
+- **Validation**: Zod
+
+---
+
+## Setup & Running Locally
+
+### 1. Clone the Repository
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/Bhushan-04/buyer_lead.git
+cd buyer_lead
+
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install Dependencies
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Set Up Environment Variables
+```bash
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DBNAME"
+DIRECT_URL = ""
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Set Up the Database with Prisma
 
-## Learn More
+```bash
+npx prisma init
+npx prisma generate
+npx prisma migrate --name init
+```
+### 5. Run the Development Server
+npm run dev
 
-To learn more about Next.js, take a look at the following resources:
+## Validation
+Validation using zod
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Server vs Client Rendering
+Client Components: Handle forms, search, and interactions.
+Server Components: Handle initial page load and data fetching (SSR).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Ownership Enforcement
+-Buyer records have an ownerId.
+-API routes check that the current user matches ownerId before allowing PUT or DELETE operations.
+-Prevents unauthorized edits or deletes.

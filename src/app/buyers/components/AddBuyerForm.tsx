@@ -56,7 +56,7 @@ export default function AddBuyerForm({ onSuccess }: AddBuyerFormProps) {
     tags: [] as string[],
   });
 
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [errors, setErrors] = useState<Record<string, { _errors: string[] }>>({});
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,29 +78,42 @@ export default function AddBuyerForm({ onSuccess }: AddBuyerFormProps) {
       return;
     }
 
-    const res = await fetch("/api/buyers/new", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(parsed.data),
-    });
+    try {
+      const res = await fetch("/api/buyers/new", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsed.data),
+      });
 
-    if (res.ok) {
-      if (onSuccess) onSuccess();
-    } else {
-      const err = await res.json().catch(() => ({}));
-      alert("Error: " + JSON.stringify(err));
+      if (res.ok) {
+        if (onSuccess) onSuccess();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert("Error: " + JSON.stringify(err));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network error!");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
+
+  // Helper to render errors
+  const renderErrors = (field: string) =>
+    errors[field]?._errors?.map((msg, i) => (
+      <p key={i} className="text-red-500 text-sm">{msg}</p>
+    ));
 
   return (
     <form
       onSubmit={handleSubmit}
       className="max-w-xl mx-auto p-4 space-y-3 overflow-y-auto"
-      style={{ maxHeight: "80vh" }} // ensures scrolling inside modal
+      style={{ maxHeight: "80vh" }}
     >
       <h2 className="text-xl font-bold mb-2">Add Lead</h2>
 
+      {/* Full Name */}
       <div>
         <label>Full Name</label>
         <input
@@ -110,39 +123,32 @@ export default function AddBuyerForm({ onSuccess }: AddBuyerFormProps) {
             setFormData({ ...formData, fullName: e.target.value })
           }
         />
-        {errors.fullName && (
-          <p className="text-red-500">{errors.fullName.join(", ")}</p>
-        )}
+        {renderErrors("fullName")}
       </div>
 
+      {/* Phone */}
       <div>
         <label>Phone</label>
         <input
           className="border p-2 w-full rounded"
           value={formData.phone}
-          onChange={(e) =>
-            setFormData({ ...formData, phone: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
         />
-        {errors.phone && (
-          <p className="text-red-500">{errors.phone.join(", ")}</p>
-        )}
+        {renderErrors("phone")}
       </div>
 
+      {/* Email */}
       <div>
         <label>Email</label>
         <input
           className="border p-2 w-full rounded"
           value={formData.email}
-          onChange={(e) =>
-            setFormData({ ...formData, email: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
         />
-        {errors.email && (
-          <p className="text-red-500">{errors.email.join(", ")}</p>
-        )}
+        {renderErrors("email")}
       </div>
 
+      {/* City */}
       <div>
         <label>City</label>
         <select
@@ -157,11 +163,10 @@ export default function AddBuyerForm({ onSuccess }: AddBuyerFormProps) {
           <option>Panchkula</option>
           <option>Other</option>
         </select>
-        {errors.city && (
-          <p className="text-red-500">{errors.city.join(", ")}</p>
-        )}
+        {renderErrors("city")}
       </div>
 
+      {/* Property Type */}
       <div>
         <label>Property Type</label>
         <select
@@ -178,11 +183,10 @@ export default function AddBuyerForm({ onSuccess }: AddBuyerFormProps) {
           <option>Office</option>
           <option>Retail</option>
         </select>
-        {errors.propertyType && (
-          <p className="text-red-500">{errors.propertyType.join(", ")}</p>
-        )}
+        {renderErrors("propertyType")}
       </div>
 
+      {/* BHK */}
       {["Apartment", "Villa"].includes(formData.propertyType) && (
         <div>
           <label>BHK</label>
@@ -198,27 +202,26 @@ export default function AddBuyerForm({ onSuccess }: AddBuyerFormProps) {
             <option>4</option>
             <option>Studio</option>
           </select>
-          {errors.bhk && (
-            <p className="text-red-500">{errors.bhk.join(", ")}</p>
-          )}
+          {renderErrors("bhk")}
         </div>
       )}
 
+      {/* Purpose */}
       <div>
         <label>Purpose</label>
         <select
           className="border p-2 w-full rounded"
           value={formData.purpose}
-          onChange={(e) =>
-            setFormData({ ...formData, purpose: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
         >
           <option value="">Select</option>
           <option>Buy</option>
           <option>Rent</option>
         </select>
+        {renderErrors("purpose")}
       </div>
 
+      {/* Budget */}
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label>Budget Min</label>
@@ -230,6 +233,7 @@ export default function AddBuyerForm({ onSuccess }: AddBuyerFormProps) {
               setFormData({ ...formData, budgetMin: e.target.value })
             }
           />
+          {renderErrors("budgetMin")}
         </div>
         <div>
           <label>Budget Max</label>
@@ -241,17 +245,17 @@ export default function AddBuyerForm({ onSuccess }: AddBuyerFormProps) {
               setFormData({ ...formData, budgetMax: e.target.value })
             }
           />
+          {renderErrors("budgetMax")}
         </div>
       </div>
 
+      {/* Timeline */}
       <div>
         <label>Timeline</label>
         <select
           className="border p-2 w-full rounded"
           value={formData.timeline}
-          onChange={(e) =>
-            setFormData({ ...formData, timeline: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, timeline: e.target.value })}
         >
           <option value="">Select</option>
           <option>0-3m</option>
@@ -259,16 +263,16 @@ export default function AddBuyerForm({ onSuccess }: AddBuyerFormProps) {
           <option>&gt;6m</option>
           <option>Exploring</option>
         </select>
+        {renderErrors("timeline")}
       </div>
 
+      {/* Source */}
       <div>
         <label>Source</label>
         <select
           className="border p-2 w-full rounded"
           value={formData.source}
-          onChange={(e) =>
-            setFormData({ ...formData, source: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, source: e.target.value })}
         >
           <option value="">Select</option>
           <option>Website</option>
@@ -277,19 +281,21 @@ export default function AddBuyerForm({ onSuccess }: AddBuyerFormProps) {
           <option>Call</option>
           <option>Other</option>
         </select>
+        {renderErrors("source")}
       </div>
 
+      {/* Notes */}
       <div>
         <label>Notes</label>
         <textarea
           className="border p-2 w-full rounded"
           value={formData.notes}
-          onChange={(e) =>
-            setFormData({ ...formData, notes: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         />
+        {renderErrors("notes")}
       </div>
 
+      {/* Tags */}
       <div>
         <label>Tags (comma separated)</label>
         <input
@@ -302,8 +308,10 @@ export default function AddBuyerForm({ onSuccess }: AddBuyerFormProps) {
             })
           }
         />
+        {renderErrors("tags")}
       </div>
 
+      {/* Submit */}
       <button
         type="submit"
         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
